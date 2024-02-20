@@ -2,6 +2,7 @@ from hashlib import md5
 from pathlib import Path
 from typing import Annotated, TYPE_CHECKING
 
+import pyperclip
 from rich import print
 from rich.prompt import Prompt, Confirm
 
@@ -90,3 +91,34 @@ def add(
 
     storefile.write_text(store_json)
     print(f"[green][b]successfully registered an account for [i]{target}")
+
+@app.command("get", short_help="get account passphrase", help="get/print account passphrase from store")
+def get(
+    target: Annotated[str, typer.Argument(show_default=False, dir_okay=False, file_okay=False)],
+    clipboard: Annotated[bool, typer.Option("--clipboard", "-c", show_default=False, is_flag=True)] = False,
+) -> None:
+    if not storefile.exists():
+        error("store file not initialized", code=3)
+
+    store = models.Store.model_validate_json(storefile.read_text())
+
+    if not store.accounts.__contains__(target):
+        error("account doesn't exists", code=1)
+
+    master_passphrase = Prompt.ask(":locked_with_key: enter master passphrase", password=True)
+    if not md5(master_passphrase.encode()).hexdigest() == store.keyhash:
+        error("incorrect master passphrase", code=4)
+
+    account = store.accounts[target]
+
+    try:
+        passphrase = cryptography.decrypt(account.passphrase, master_passphrase, account.salt, account.initial_vector)
+
+    except BaseException:
+        error("decryption failed, possibly because given master passphrase was not used at encryption", code=5)
+
+    if not clipboard:
+        print(f"[black]passphrase: [yellow][b]{passphrase}")
+    else:
+        pyperclip.copy(passphrase)
+        print("[green][b]passphrase copied to clipboard")
