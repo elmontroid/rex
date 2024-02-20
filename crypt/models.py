@@ -4,7 +4,7 @@ class Account(BaseModel):
     passphrase: str
 
     salt: str
-    initial_vectors: str
+    initial_vector: str
 
 class Store(BaseModel):
     keyhash: str
