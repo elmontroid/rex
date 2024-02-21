@@ -122,3 +122,25 @@ def get(
     else:
         pyperclip.copy(passphrase)
         print("[green][b]passphrase copied to clipboard")
+
+@app.command("remove", short_help="remove account", help="remove an account from store")
+def remove(
+    target: Annotated[str, typer.Argument(show_default=False, dir_okay=False, file_okay=False)],
+    ask: Annotated[bool, typer.Option("--no-input", "-ni", show_default=False, is_flag=True)] = True,
+) -> None:
+    if not storefile.exists():
+        error("store file not initialized", code=3)
+
+    store = models.Store.model_validate_json(storefile.read_text())
+
+    if not store.accounts.__contains__(target):
+        error("account doesn't exists", code=1)
+
+    if ask and not Confirm.ask("[yellow]remove account from store"):
+        error("delete permission not granted by user", code=2)
+
+    store.accounts.pop(target)
+    store_json = store.model_dump_json(indent=2)
+
+    storefile.write_text(store_json)
+    print(f"[green][b]account for {target} was removed from store")
