@@ -144,3 +144,13 @@ def remove(
 
     storefile.write_text(store_json)
     print(f"[green][b]account for {target} was removed from store")
+
+@app.command("list", short_help="list accounts", help="list every accounts from store")
+def ls():
+    if not storefile.exists():
+        error("store file not initialized", code=3)
+
+    store = models.Store.model_validate_json(storefile.read_text())
+
+    for account in store.accounts:
+        print(f"[yellow][b]{account}")
