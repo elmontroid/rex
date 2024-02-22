@@ -1,8 +1,24 @@
+import bcrypt
+
 from Crypto.Random import get_random_bytes
 from Crypto.Protocol.KDF import PBKDF2
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+
+def hash(string: str) -> str:
+    """Hashes a string using bcrypt"""
+    salt = bcrypt.gensalt()
+    byte_string = string.encode()
+
+    return bcrypt.hashpw(byte_string, salt).hex()
+
+
+def verify_hash(hash: str, string: str) -> bool:
+    """Returns true, if string matches the hash"""
+    byte_string = string.encode()
+    byte_hash = bytes.fromhex(hash)
+    return bcrypt.checkpw(byte_string, byte_hash)
 
 
 def generate_key(length: int = 30) -> str:

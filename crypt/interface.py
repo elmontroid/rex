@@ -45,8 +45,8 @@ def register() -> None:
 
         print("[prompt.invalid]passphrase too short")
 
-    keyhash = md5(master_passphrase.encode()).hexdigest()
-    print(f"passphrase signature: [b]{keyhash}")
+    keyhash = cryptography.hash(master_passphrase)
+    print(f"passphrase signature: [b]{md5(keyhash.encode()).hexdigest()}")
 
     store = models.Store(keyhash=keyhash)
     store_json = store.model_dump_json(indent=3)
@@ -72,7 +72,7 @@ def add(
         error("overwrite permission denied", code=3)
 
     master_passphrase = Prompt.ask(":locked_with_key: enter master passphrase", password=True)
-    if not md5(master_passphrase.encode()).hexdigest() == store.keyhash:
+    if not cryptography.verify_hash(store.keyhash, master_passphrase):
         error("incorrect master passphrase", code=5)
 
     passphrase = Prompt.ask(":pencil: enter account passphrase [magenta](should be at least 5 characters)", password=True)
@@ -106,7 +106,7 @@ def get(
         error("The account does not exist. To add a new account, use the [i]'add'[/] command.", code=2)
 
     master_passphrase = Prompt.ask(":locked_with_key: enter master passphrase", password=True)
-    if not md5(master_passphrase.encode()).hexdigest() == store.keyhash:
+    if not cryptography.verify_hash(store.keyhash, master_passphrase):
         error("incorrect master passphrase", code=5)
 
     account = store.accounts[site]
