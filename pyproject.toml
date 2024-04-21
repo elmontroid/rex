@@ -1,0 +1,11 @@
+[project]
+name = "rex"
+version = "3.7.5"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "Nithin", email = "cromizonebolt@gmail.com"}]
+description = "A powerful terminal password manager using AES encryption and python"
+dependencies = ["bcrypt==4.0.1", "pycryptodome==3.20.0", "pydantic==2.5.3", "typer==0.9.0", "rich==13.7.0", "pyperclip==1.8.2"]
+
+[project.scripts]
+rex = "rex:cli"

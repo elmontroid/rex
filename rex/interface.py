@@ -1,6 +1,6 @@
 from hashlib import md5
 from pathlib import Path
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated
 
 import pyperclip
 from rich import print
@@ -8,20 +8,11 @@ from rich.prompt import Prompt, Confirm
 
 import typer
 
-import cryptography
-import models
+from . import cryptography
+from . import models
 
-if TYPE_CHECKING:
-    from . import cryptography
-
-
-storefile = Path(__file__).parent.joinpath("store.json").resolve()
-app = typer.Typer(
-    name="crypt",
-    short_help="password manager",
-    help="A simple password manager in your terminal",
-    pretty_exceptions_show_locals=False,
-)
+store_file = Path("~", "password-store.json").expanduser()
+app = typer.Typer(name="rex", short_help="A password manager", help="A powerful password manager using AES and python", pretty_exceptions_show_locals=False)
 
 
 def error(message: str, code: int = 1) -> None:
@@ -29,13 +20,13 @@ def error(message: str, code: int = 1) -> None:
     raise typer.Exit(code=code)
 
 
-@app.command("init", short_help="Initiate store.", help="Initiate a store in the application directory with the hashed form of the master passphrase.")
+@app.command("init", help="initializes a store in home directory")
 def register() -> None:
-    if not storefile.exists():
-        print(f"creating store file at [magenta][i]'{storefile}'")
-        storefile.touch()
+    if not store_file.exists():
+        print(f"creating store file at [magenta][i]'{store_file}'")
+        store_file.touch()
 
-    if not storefile.read_text() == "" and not Confirm.ask("[yellow]overwrite existing store"):
+    if not store_file.read_text() == "" and not Confirm.ask("[yellow]overwrite existing store"):
         error("overwrite permission denied", code=3)
 
     while True:
@@ -51,19 +42,19 @@ def register() -> None:
     store = models.Store(keyhash=keyhash)
     store_json = store.model_dump_json(indent=3)
 
-    storefile.write_text(store_json)
+    store_file.write_text(store_json)
     print("[green][b]successfully initialized store")
 
 
-@app.command("add", short_help="Add an account.", help="Add an account to the store encrypted using the AES encryption method.")
+@app.command("add", help="Adds a new password to the password manager")
 def add(
     site: Annotated[str, typer.Argument(show_default=False, dir_okay=False, file_okay=False)],
     overwritable: Annotated[bool, typer.Option("--overwrite", "-o", show_default=False, is_flag=True)] = False,
 ) -> None:
-    if not storefile.exists():
+    if not store_file.exists():
         error("the store file has not been initialized, use the [i]'init'[/] command to initialize the store", code=4)
 
-    store = models.Store.model_validate_json(storefile.read_text())
+    store = models.Store.model_validate_json(store_file.read_text())
 
     if store.accounts.__contains__(site) and not overwritable:
         error("the account already exists within the store, use the [i]'--overwrite'[/] flag to overwrite the existing account", code=2)
@@ -89,18 +80,18 @@ def add(
 
     store_json = store.model_dump_json(indent=3)
 
-    storefile.write_text(store_json)
+    store_file.write_text(store_json)
     print(f"[green][b]registered [i]{site}[/] account")
 
-@app.command("get", short_help="Get passphrase.", help="Display or copy the passphrase of any account in the store.")
+@app.command("get", help="Retrieves an existing password from the password manager")
 def get(
     site: Annotated[str, typer.Argument(show_default=False, dir_okay=False, file_okay=False)],
     copy: Annotated[bool, typer.Option("--copy", "-c", show_default=False, is_flag=True)] = False,
 ) -> None:
-    if not storefile.exists():
+    if not store_file.exists():
         error("the store file has not been initialized, use the [i]'init'[/] command to initialize the store", code=4)
 
-    store = models.Store.model_validate_json(storefile.read_text())
+    store = models.Store.model_validate_json(store_file.read_text())
 
     if not store.accounts.__contains__(site):
         error("The account does not exist. To add a new account, use the [i]'add'[/] command.", code=2)
@@ -118,15 +109,15 @@ def get(
         pyperclip.copy(passphrase)
         print("[green][b]passphrase copied to clipboard")
 
-@app.command("remove", short_help="Remove an account.", help="Remove an account from store.")
+@app.command("remove", help="Removes an existing password from the password manager")
 def remove(
     site: Annotated[str, typer.Argument(show_default=False, dir_okay=False, file_okay=False)],
     confirmation: Annotated[bool, typer.Option("--no-input", "-ni", show_default=False, is_flag=True)] = True,
 ) -> None:
-    if not storefile.exists():
+    if not store_file.exists():
         error("the store file has not been initialized, use the [i]'init'[/] command to initialize the store", code=4)
 
-    store = models.Store.model_validate_json(storefile.read_text())
+    store = models.Store.model_validate_json(store_file.read_text())
 
     if not store.accounts.__contains__(site):
         error("The account does not exist. To add a new account, use the [i]'add'[/] command.", code=2)
@@ -137,15 +128,15 @@ def remove(
     store.accounts.pop(site)
     store_json = store.model_dump_json(indent=3)
 
-    storefile.write_text(store_json)
+    store_file.write_text(store_json)
     print(f"[green][b]account [i]{site}[/] removed")
 
-@app.command("list", short_help="List accounts.", help="list every accounts from store")
+@app.command("list", help="List all passwords in the password manager")
 def show():
-    if not storefile.exists():
+    if not store_file.exists():
         error("the store file has not been initialized, use the [i]'init'[/] command to initialize the store", code=4)
 
-    store = models.Store.model_validate_json(storefile.read_text())
+    store = models.Store.model_validate_json(store_file.read_text())
 
     for account in store.accounts:
         print(f"[yellow][b]{account}")
