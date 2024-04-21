@@ -137,6 +137,8 @@ def show():
         error("the store file has not been initialized, use the [i]'init'[/] command to initialize the store", code=4)
 
     store = models.Store.model_validate_json(store_file.read_text())
+    accounts = [x for x in store.accounts]
+    accounts.sort()
 
-    for account in store.accounts:
+    for account in accounts:
         print(f"[yellow][b]{account}")
