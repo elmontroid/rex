@@ -1,6 +1,6 @@
 [project]
 name = "rex"
-version = "3.7.5"
+version = "3.7.6"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [{name = "Nithin", email = "cromizonebolt@gmail.com"}]

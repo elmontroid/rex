@@ -1,9 +1,6 @@
 # Rex
 A password manager in your terminal build using python.
 
-## Installation
-**Run *pip install rex* in the directory where you downloaded the source code**
-
 ## Usage
 
 ### Initializing store
