@@ -12,12 +12,12 @@ All the passphrases are stored in a JSON file in your home directory.
 
 To install Rex through pip run this on windows:
 ```powershell
-pip install rex
+pip install rex-password-manager
 ```
 
 or if your using Linux operating system run this:
 ```bash
-pip3 install rex
+pip3 install rex-password-manager
 ```
 
 ## Usage
